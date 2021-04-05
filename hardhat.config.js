@@ -29,7 +29,6 @@ module.exports = {
     ]
   },
   networks: {
-    default: "hardhat",
     kovan: {
       url: `https://eth-kovan.alchemyapi.io/v2/${ALCHEMY_ID}`,
       accounts: [`0x${PRIVATE_KEY}`]
