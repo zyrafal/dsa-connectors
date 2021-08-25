@@ -1,18 +1,14 @@
 const { expect } = require("chai");
 const hre = require("hardhat");
-const { web3, deployments, waffle, ethers } = hre;
-const { provider, deployContract } = waffle;
+const { waffle, ethers } = hre;
+const { provider, parseEther, getContractAt } = waffle;
 
 const deployAndEnableConnector = require("../../scripts/deployAndEnableConnector.js");
 const buildDSAv2 = require("../../scripts/buildDSAv2");
-const encodeSpells = require("../../scripts/encodeSpells.js");
-const encodeFlashcastData = require("../../scripts/encodeFlashcastData.js");
 const getMasterSigner = require("../../scripts/getMasterSigner");
 
 const addresses = require("../../scripts/constant/addresses");
 const abis = require("../../scripts/constant/abis");
-const constants = require("../../scripts/constant/constant");
-const tokens = require("../../scripts/constant/tokens");
 
 const connectV2UbiquityArtifacts = require("../../artifacts/contracts/mainnet/connectors/ubiquity/main.sol/ConnectV2Ubiquity.json");
 
@@ -42,15 +38,25 @@ describe("Ubiquity", function () {
   });
 
   it("Should have contracts deployed.", async function () {
-    expect(!!instaConnectorsV2.address).to.be.true;
-    expect(!!connector.address).to.be.true;
-    expect(!!masterSigner.address).to.be.true;
+    expect(instaConnectorsV2.address).to.be.properAddress;
+    expect(connector.address).to.be.properAddress;
+    expect(masterSigner.address).to.be.properAddress;
   });
 
   describe("DSA wallet setup", function () {
     it("Should build DSA v2", async function () {
       dsaWallet0 = await buildDSAv2(wallet0.address);
-      expect(!!dsaWallet0.address).to.be.true;
+      expect(dsaWallet0.address).to.be.properAddress;
+    });
+
+    it("Should deposit ETH into DSA wallet", async function () {
+      await wallet0.sendTransaction({
+        to: dsaWallet0.address,
+        value: ethers.utils.parseEther("10"),
+      });
+      expect(await provider.getBalance(dsaWallet0.address)).to.be.gte(
+        ethers.utils.parseEther("10")
+      );
     });
   });
 });
