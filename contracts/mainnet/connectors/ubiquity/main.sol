@@ -41,6 +41,8 @@ abstract contract UbiquityResolver is Helpers, Events {
             _lpAmount = IERC20(UbiquityUAD3CRVf).balanceOf(address(this));
         }
 
+        IERC20(UbiquityUAD3CRVf).approve(UbiquityBondingV2Address, _lpAmount);
+
         uint256 bondingShareId = UbiquityBondingV2(UbiquityBondingV2Address)
             .deposit(_lpAmount, durationWeeks);
 
