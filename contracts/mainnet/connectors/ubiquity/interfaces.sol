@@ -3,8 +3,20 @@ pragma solidity 0.7.6;
 
 import {TokenInterface} from "../../common/interfaces.sol";
 
-interface UbiquityBondingV2 {
+interface IUbiquityBondingV2 {
     function deposit(uint256 lpAmount, uint256 durationWeeks)
         external
         returns (uint256 bondingShareId);
+}
+
+interface IUbiquityMetaPool {
+    function add_liquidity(uint256[2] memory _amounts, uint256 _min_mint_amount)
+        external
+        returns (uint256);
+}
+
+interface IUbiquity3Pool {
+    function add_liquidity(uint256[3] memory _amounts, uint256 _min_mint_amount)
+        external
+        returns (uint256);
 }

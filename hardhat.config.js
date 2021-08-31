@@ -3,8 +3,8 @@ require("@nomiclabs/hardhat-ethers");
 require("@tenderly/hardhat-tenderly");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-web3");
-require("hardhat-deploy");
-require("hardhat-deploy-ethers");
+// require("hardhat-deploy");
+// require("hardhat-deploy-ethers");
 require("dotenv").config();
 
 const { utils } = require("ethers");
@@ -61,6 +61,9 @@ module.exports = {
       },
       blockGasLimit: 12000000,
       gasPrice: parseInt(utils.parseUnits("300", "gwei"))
+    },
+    local: {
+      url: "http://127.0.0.1:8545",
     },
     matic: {
       url: "https://rpc-mainnet.maticvigil.com/",
