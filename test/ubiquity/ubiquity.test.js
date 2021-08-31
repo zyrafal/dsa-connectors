@@ -14,7 +14,7 @@ const { forkReset, sendEth } = require("./utils");
 
 const connectV2UbiquityArtifacts = require("../../artifacts/contracts/mainnet/connectors/ubiquity/main.sol/ConnectV2Ubiquity.json");
 
-describe.only("Ubiquity", function() {
+describe.only("Ubiquity", function () {
   const ubiquityTest = "UBIQUITY-TEST-A";
 
   const BONDING = "0xC251eCD9f1bD5230823F9A0F99a44A87Ddd4CA38";
@@ -34,6 +34,7 @@ describe.only("Ubiquity", function() {
   const onep = BigNumber.from(10).pow(6);
   const ABI = [
     "function balanceOf(address owner) view returns (uint256)",
+    "function allowance(address owner, address spender) external view returns (uint256)",
     "function transfer(address to, uint amount) returns (boolean)",
     "function remove_liquidity_one_coin(uint256 _burn_amount, int128 i, uint256 _min_received) external returns (uint256)",
     "function add_liquidity(uint256[3],uint256) returns (uint256)",
@@ -92,98 +93,33 @@ describe.only("Ubiquity", function() {
   };
 
   const dsaDepositUAD = async (amount) => {
-    await uAD3CRVfContract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100),
-      0,
-      one.mul(amount)
-    );
+    await uAD3CRVfContract.remove_liquidity_one_coin(one.mul(amount).mul(110).div(100), 0, one.mul(amount));
     await uADContract.transfer(dsa.address, one.mul(amount));
   };
 
   const dsaDepositCRV3 = async (amount) => {
-    await uAD3CRVfContract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100),
-      1,
-      one.mul(amount)
-    );
+    await uAD3CRVfContract.remove_liquidity_one_coin(one.mul(amount).mul(110).div(100), 1, one.mul(amount));
     await CRV3Contract.transfer(dsa.address, one.mul(amount));
   };
 
   const dsaDepositDAI = async (amount) => {
-    await uAD3CRVfContract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(120)
-        .div(100),
-      1,
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100)
-    );
-    await POOL3Contract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100),
-      0,
-      one.mul(amount)
-    );
+    await uAD3CRVfContract.remove_liquidity_one_coin(one.mul(amount).mul(120).div(100), 1, one.mul(amount).mul(110).div(100));
+    await POOL3Contract.remove_liquidity_one_coin(one.mul(amount).mul(110).div(100), 0, one.mul(amount));
     await DAIContract.transfer(dsa.address, one.mul(amount));
   };
   const dsaDepositUSDC = async (amount) => {
-    await uAD3CRVfContract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(120)
-        .div(100),
-      1,
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100)
-    );
-    await POOL3Contract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100),
-      1,
-      onep.mul(amount)
-    );
+    await uAD3CRVfContract.remove_liquidity_one_coin(one.mul(amount).mul(120).div(100), 1, one.mul(amount).mul(110).div(100));
+    await POOL3Contract.remove_liquidity_one_coin(one.mul(amount).mul(110).div(100), 1, onep.mul(amount));
     await USDCContract.transfer(dsa.address, onep.mul(amount));
   };
   const dsaDepositUSDT = async (amount) => {
-    await uAD3CRVfContract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(120)
-        .div(100),
-      1,
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100)
-    );
-    await POOL3Contract.remove_liquidity_one_coin(
-      one
-        .mul(amount)
-        .mul(110)
-        .div(100),
-      2,
-      onep.mul(amount)
-    );
+    await uAD3CRVfContract.remove_liquidity_one_coin(one.mul(amount).mul(120).div(100), 1, one.mul(amount).mul(110).div(100));
+    await POOL3Contract.remove_liquidity_one_coin(one.mul(amount).mul(110).div(100), 2, onep.mul(amount));
     await USDTContract.transfer(dsa.address, onep.mul(amount));
   };
 
-  describe("DSA wallet setup", function() {
-    it("Should have contracts deployed.", async function() {
+  describe("DSA wallet setup", function () {
+    it("Should have contracts deployed.", async function () {
       expect(POOL3Contract.address).to.be.properAddress;
       expect(CRV3Contract.address).to.be.properAddress;
       expect(uADContract.address).to.be.properAddress;
@@ -196,34 +132,34 @@ describe.only("Ubiquity", function() {
       expect(connector.address).to.be.properAddress;
       expect(dsa.address).to.be.properAddress;
     });
-    it("Should deposit uAD3CRVf into DSA wallet", async function() {
+    it("Should deposit uAD3CRVf into DSA wallet", async function () {
       await dsaDepositUAD3CRVf(100);
       expect(await uAD3CRVfContract.balanceOf(dsa.address)).to.be.gte(one.mul(100));
     });
-    it("Should deposit uAD into DSA wallet", async function() {
+    it("Should deposit uAD into DSA wallet", async function () {
       await dsaDepositUAD(100);
       expect(await uADContract.balanceOf(dsa.address)).to.be.gte(one.mul(100));
     });
-    it("Should deposit 3CRV into DSA wallet", async function() {
+    it("Should deposit 3CRV into DSA wallet", async function () {
       await dsaDepositCRV3(100);
       expect(await CRV3Contract.balanceOf(dsa.address)).to.be.gte(one.mul(100));
     });
-    it("Should deposit DAI into DSA wallet", async function() {
+    it("Should deposit DAI into DSA wallet", async function () {
       await dsaDepositDAI(100);
       expect(await DAIContract.balanceOf(dsa.address)).to.be.gte(one.mul(100));
     });
-    it("Should deposit USDC into DSA wallet", async function() {
+    it("Should deposit USDC into DSA wallet", async function () {
       await dsaDepositUSDC(100);
       expect(await USDCContract.balanceOf(dsa.address)).to.be.gte(onep.mul(100));
     });
-    it("Should deposit USDT into DSA wallet", async function() {
+    it("Should deposit USDT into DSA wallet", async function () {
       await dsaDepositUSDT(100);
       expect(await USDTContract.balanceOf(dsa.address)).to.be.gte(onep.mul(100));
     });
   });
 
-  describe("Main", function() {
-    it("should deposit uAD3CRVf to get Ubiquity Bonding Shares", async function() {
+  describe("Main", function () {
+    it("should deposit uAD3CRVf to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUAD3CRVf(100);
       await expect(
         dsa.cast(
@@ -239,7 +175,7 @@ describe.only("Ubiquity", function() {
       ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
     });
 
-    it("should deposit uAD to get Ubiquity Bonding Shares", async function() {
+    it("should deposit uAD to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUAD(100);
       await expect(
         dsa.cast(
@@ -255,7 +191,7 @@ describe.only("Ubiquity", function() {
       ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
     });
 
-    it("should deposit 3CRV to get Ubiquity Bonding Shares", async function() {
+    it("should deposit 3CRV to get Ubiquity Bonding Shares", async function () {
       await dsaDepositCRV3(100);
       await expect(
         dsa.cast(
@@ -271,9 +207,8 @@ describe.only("Ubiquity", function() {
       ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
     });
 
-    it("should deposit DAI to get Ubiquity Bonding Shares", async function() {
+    it("should deposit DAI to get Ubiquity Bonding Shares", async function () {
       await dsaDepositDAI(100);
-
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -287,11 +222,43 @@ describe.only("Ubiquity", function() {
         )
       ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
     });
+
+    it("should deposit USDC to get Ubiquity Bonding Shares", async function () {
+      await dsaDepositUSDC(100);
+      await expect(
+        dsa.cast(
+          ...encodeSpells([
+            {
+              connector: ubiquityTest,
+              method: "deposit",
+              args: [USDC, onep.mul(100), 4, 0, 0],
+            },
+          ]),
+          uadWhaleAddress
+        )
+      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+    });
+
+    it("should deposit USDT to get Ubiquity Bonding Shares", async function () {
+      await dsaDepositUSDT(100);
+      await expect(
+        dsa.cast(
+          ...encodeSpells([
+            {
+              connector: ubiquityTest,
+              method: "deposit",
+              args: [USDT, onep.mul(100), 4, 0, 0],
+            },
+          ]),
+          uadWhaleAddress
+        )
+      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+    });
   });
 
-  describe("3Pool test", function() {
-    it("Should add DAI liquidity to 3Pool", async function() {
-      const n = 42;
+  describe("3Pool test", function () {
+    it("Should add DAI liquidity to 3Pool", async function () {
+      const n = 100;
       await dsaDepositDAI(n);
       const amount = one.mul(n);
       const [dsaSigner] = await impersonate([dsa.address]);

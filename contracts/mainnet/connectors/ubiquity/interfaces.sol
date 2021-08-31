@@ -16,7 +16,8 @@ interface IUbiquityMetaPool {
 }
 
 interface IUbiquity3Pool {
-    function add_liquidity(uint256[3] memory _amounts, uint256 _min_mint_amount)
-        external
-        returns (uint256);
+    function add_liquidity(
+        uint256[3] calldata _amounts,
+        uint256 _min_mint_amount
+    ) external;
 }
