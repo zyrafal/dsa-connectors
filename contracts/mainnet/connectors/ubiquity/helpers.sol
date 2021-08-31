@@ -34,7 +34,7 @@ abstract contract Helpers is DSMath, Basic {
      * @dev USDT Address
      */
     address internal constant UbiquityUSDT =
-        0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     /**
      * @dev Curve 3CRV Token Address

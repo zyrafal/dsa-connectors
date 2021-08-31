@@ -63,14 +63,8 @@ abstract contract UbiquityResolver is Helpers, Events {
             else if (token == UbiquityUSDC) index1 = 1;
             amounts1[index1] = _amount;
 
-            uint256 expected_amount = SafeMath.div(
-                SafeMath.mul(_amount, 99),
-                100
-            );
-            TokenInterface(token).approve(Ubiquity3Pool, _amount);
-
             // Deposit DAI, USDC or USDT into 3Pool to get 3Crv LPs
-            // _crvAmount =
+            TokenInterface(token).approve(Ubiquity3Pool, _amount);
             IUbiquity3Pool(Ubiquity3Pool).add_liquidity(amounts1, 0);
         }
 
@@ -88,6 +82,9 @@ abstract contract UbiquityResolver is Helpers, Events {
                     _crvAmount = _amount;
                 } else {
                     token2 = Ubiquity3CRV;
+                    _crvAmount = TokenInterface(token2).balanceOf(
+                        address(this)
+                    );
                 }
             }
             amounts2[index2] = _crvAmount;
@@ -114,6 +111,7 @@ abstract contract UbiquityResolver is Helpers, Events {
             durationWeeks
         );
 
+        // uint256 bondingShareId = 0;
         setUint(setId, bondingShareId);
 
         _eventName = "Deposit(address,address,uint256,uint256,uint256,uint256,uint256,uint256)";
