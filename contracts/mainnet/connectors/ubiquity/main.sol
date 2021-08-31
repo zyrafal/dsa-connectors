@@ -17,11 +17,11 @@ import {Events} from "./events.sol";
 abstract contract UbiquityResolver is Helpers, Events {
     /**
      * @dev Deposit into Ubiquity protocol
-     * @notice DAI / USDC / USDT => 3CRV / uAD => uADR3CRV-f => Ubiquity BondingShare
-     * @notice STEP 1 : DAI / USDC / USDT => 3CRV
-     * @notice STEP 2 : 3CRV / UAD => uADR3CRV-f
-     * @notice STEP 3 : uADR3CRV-f => Ubiquity BondingShare
-     * @param token Token deposited : DAI, USDC, USDT, 3CRV, uAD or uADR3CRV-f
+     * @notice 3POOL (DAI / USDC / USDT) => METAPOOL (3CRV / uAD) => uAD3CRV-f => Ubiquity BondingShare
+     * @notice STEP 1 : 3POOL (DAI / USDC / USDT) => 3CRV
+     * @notice STEP 2 : METAPOOL(3CRV / UAD) => uAD3CRV-f
+     * @notice STEP 3 : uAD3CRV-f => Ubiquity BondingShare
+     * @param token Token deposited : DAI, USDC, USDT, 3CRV, uAD or uAD3CRV-f
      * @param amount Amount of tokens to deposit (For max: `uint256(-1)`)
      * @param durationWeeks Duration in weeks tokens will be locked (4-208)
      * @param getId ID to retrieve amt.
@@ -64,6 +64,7 @@ abstract contract UbiquityResolver is Helpers, Events {
             amounts1[index1] = _amount;
 
             // Deposit DAI, USDC or USDT into 3Pool to get 3Crv LPs
+            TokenInterface(token).approve(Ubiquity3Pool, 0);
             TokenInterface(token).approve(Ubiquity3Pool, _amount);
             IUbiquity3Pool(Ubiquity3Pool).add_liquidity(amounts1, 0);
         }
@@ -88,9 +89,10 @@ abstract contract UbiquityResolver is Helpers, Events {
                 }
             }
             amounts2[index2] = _crvAmount;
-            TokenInterface(token2).approve(UbiquityUAD3CRVf, _crvAmount);
 
-            // Deposit in uAD3CRV pool to get uADR3CRV-f LPs
+            // Deposit in uAD3CRV pool to get uAD3CRV-f LPs
+            TokenInterface(token2).approve(UbiquityUAD3CRVf, 0);
+            TokenInterface(token2).approve(UbiquityUAD3CRVf, _crvAmount);
             _lpAmount = IUbiquityMetaPool(UbiquityUAD3CRVf).add_liquidity(
                 amounts2,
                 0
@@ -102,16 +104,14 @@ abstract contract UbiquityResolver is Helpers, Events {
             _lpAmount = _amount;
         }
 
-        // Approve transfer of uADR3CRV-f LPs by UbiquityBondingV2
+        // Deposit uAD3CRV-f LPs into UbiquityBondingV2 and get Ubiquity Bonding Shares
+        TokenInterface(UbiquityUAD3CRVf).approve(UbiquityBonding, 0);
         TokenInterface(UbiquityUAD3CRVf).approve(UbiquityBonding, _lpAmount);
-
-        // Deposit uADR3CRV-f LPs into UbiquityBondingV2 and get Ubiquity Bonding Shares
         uint256 bondingShareId = IUbiquityBondingV2(UbiquityBonding).deposit(
             _lpAmount,
             durationWeeks
         );
 
-        // uint256 bondingShareId = 0;
         setUint(setId, bondingShareId);
 
         _eventName = "Deposit(address,address,uint256,uint256,uint256,uint256,uint256,uint256)";
