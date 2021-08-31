@@ -59,7 +59,7 @@ module.exports = {
         blockNumber: 12796965,
       },
       blockGasLimit: 12000000,
-      gasPrice: parseInt(utils.parseUnits("300", "gwei"))
+      gasPrice: parseInt(utils.parseUnits("300", "gwei")),
     },
     local: {
       url: "http://127.0.0.1:8545",
