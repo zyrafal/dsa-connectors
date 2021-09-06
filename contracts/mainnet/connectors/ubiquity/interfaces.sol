@@ -21,3 +21,11 @@ interface IUbiquity3Pool {
         uint256 _min_mint_amount
     ) external;
 }
+
+interface IUbiquityAlgorithmicDollarManager {
+    function dollarTokenAddress() external returns (address);
+
+    function stableSwapMetaPoolAddress() external returns (address);
+
+    function bondingContractAddress() external returns (address);
+}

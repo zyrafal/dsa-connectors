@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.7.6;
+pragma abicoder v2;
 
 /**
  * @title Ubiquity.
@@ -10,11 +10,13 @@ pragma experimental ABIEncoderV2;
 import {TokenInterface, MemoryInterface} from "../../common/interfaces.sol";
 import {Stores} from "../../common/stores.sol";
 import {SafeMath} from "../../common/math.sol";
-import {IUbiquityBondingV2, IUbiquityMetaPool, IUbiquity3Pool} from "./interfaces.sol";
+import {IUbiquityBondingV2, IUbiquityMetaPool, IUbiquity3Pool, IUbiquityAlgorithmicDollarManager} from "./interfaces.sol";
 import {Helpers} from "./helpers.sol";
 import {Events} from "./events.sol";
 
-abstract contract UbiquityResolver is Helpers, Events {
+contract ConnectV2Ubiquity is Helpers, Events {
+    string public constant name = "Ubiquity-v1";
+
     /**
      * @dev Deposit into Ubiquity protocol
      * @notice 3POOL (DAI / USDC / USDT) => METAPOOL (3CRV / uAD) => uAD3CRV-f => Ubiquity BondingShare
@@ -38,76 +40,82 @@ abstract contract UbiquityResolver is Helpers, Events {
         payable
         returns (string memory _eventName, bytes memory _eventParam)
     {
-        bool step1 = token == UbiquityDAI ||
-            token == UbiquityUSDC ||
-            token == UbiquityUSDT;
-        bool step2 = step1 || token == UbiquityUAD || token == Ubiquity3CRV;
+        address UAD = IUbiquityAlgorithmicDollarManager(
+            UbiquityAlgorithmicDollarManager
+        ).dollarTokenAddress();
+        address UAD3CRVf = IUbiquityAlgorithmicDollarManager(
+            UbiquityAlgorithmicDollarManager
+        ).stableSwapMetaPoolAddress();
 
-        require(step1 || step2 || token == UbiquityUAD3CRVf);
+        require(
+            token == DAI ||
+                token == USDC ||
+                token == USDT ||
+                token == UAD ||
+                token == CRV3 ||
+                token == UAD3CRVf,
+            "Invalid token: must be DAI, USDC, USDT, uAD, 3CRV or uAD3CRV-f"
+        );
 
         uint256 _amount = getUint(getId, amount);
-        uint256 _crvAmount;
         uint256 _lpAmount;
 
         // Full balance if amount = -1
         if (_amount == uint256(-1)) {
-            _amount = TokenInterface(token).balanceOf(address(this));
+            _amount = getTokenBal(TokenInterface(token));
         }
 
-        // STEP 1
-        if (step1) {
+        // STEP 1 : SwapTo3CRV : Deposit DAI, USDC or USDT into 3Pool to get 3Crv LPs
+        if (token == DAI || token == USDC || token == USDT) {
             uint256[3] memory amounts1;
-            uint8 index1;
 
-            if (token == UbiquityUSDT) index1 = 2;
-            else if (token == UbiquityUSDC) index1 = 1;
-            amounts1[index1] = _amount;
+            if (token == DAI) amounts1[0] = _amount;
+            else if (token == USDC) amounts1[1] = _amount;
+            else if (token == USDT) amounts1[2] = _amount;
 
-            // Deposit DAI, USDC or USDT into 3Pool to get 3Crv LPs
-            TokenInterface(token).approve(Ubiquity3Pool, 0);
-            TokenInterface(token).approve(Ubiquity3Pool, _amount);
-            IUbiquity3Pool(Ubiquity3Pool).add_liquidity(amounts1, 0);
+            approve(TokenInterface(token), Pool3, _amount);
+            IUbiquity3Pool(Pool3).add_liquidity(amounts1, 0);
         }
 
-        // STEP 2
-        if (step2) {
+        // STEP 2 : ProvideLiquidityToMetapool : Deposit in uAD3CRV pool to get uAD3CRV-f LPs
+        if (
+            token == DAI ||
+            token == USDC ||
+            token == USDT ||
+            token == UAD ||
+            token == CRV3
+        ) {
             uint256[2] memory amounts2;
-            uint8 index2;
             address token2 = token;
+            uint256 _amount2;
 
-            if (token == UbiquityUAD) {
-                _crvAmount = _amount;
+            if (token == UAD) {
+                _amount2 = _amount;
+                amounts2[0] = _amount2;
             } else {
-                index2 = 1;
-                if (token == Ubiquity3CRV) {
-                    _crvAmount = _amount;
+                if (token == CRV3) {
+                    _amount2 = _amount;
                 } else {
-                    token2 = Ubiquity3CRV;
-                    _crvAmount = TokenInterface(token2).balanceOf(
-                        address(this)
-                    );
+                    token2 = CRV3;
+                    _amount2 = getTokenBal(TokenInterface(token2));
                 }
+                amounts2[1] = _amount2;
             }
-            amounts2[index2] = _crvAmount;
 
-            // Deposit in uAD3CRV pool to get uAD3CRV-f LPs
-            TokenInterface(token2).approve(UbiquityUAD3CRVf, 0);
-            TokenInterface(token2).approve(UbiquityUAD3CRVf, _crvAmount);
-            _lpAmount = IUbiquityMetaPool(UbiquityUAD3CRVf).add_liquidity(
-                amounts2,
-                0
-            );
+            approve(TokenInterface(token2), UAD3CRVf, _amount2);
+            _lpAmount = IUbiquityMetaPool(UAD3CRVf).add_liquidity(amounts2, 0);
         }
 
-        // STEP 3
-        if (token == UbiquityUAD3CRVf) {
+        // STEP 3 : Farm/ApeIn : Deposit uAD3CRV-f LPs into UbiquityBondingV2 and get Ubiquity Bonding Shares
+        if (token == UAD3CRVf) {
             _lpAmount = _amount;
         }
 
-        // Deposit uAD3CRV-f LPs into UbiquityBondingV2 and get Ubiquity Bonding Shares
-        TokenInterface(UbiquityUAD3CRVf).approve(UbiquityBonding, 0);
-        TokenInterface(UbiquityUAD3CRVf).approve(UbiquityBonding, _lpAmount);
-        uint256 bondingShareId = IUbiquityBondingV2(UbiquityBonding).deposit(
+        address Bonding = IUbiquityAlgorithmicDollarManager(
+            UbiquityAlgorithmicDollarManager
+        ).bondingContractAddress();
+        approve(TokenInterface(UAD3CRVf), Bonding, _lpAmount);
+        uint256 bondingShareId = IUbiquityBondingV2(Bonding).deposit(
             _lpAmount,
             durationWeeks
         );
@@ -126,8 +134,4 @@ abstract contract UbiquityResolver is Helpers, Events {
             setId
         );
     }
-}
-
-contract ConnectV2Ubiquity is UbiquityResolver {
-    string public constant name = "Ubiquity-v1";
 }

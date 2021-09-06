@@ -3,8 +3,8 @@ require("@nomiclabs/hardhat-ethers");
 require("@tenderly/hardhat-tenderly");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-web3");
-// require("hardhat-deploy");
-// require("hardhat-deploy-ethers");
+require("hardhat-deploy");
+require("hardhat-deploy-ethers");
 require("dotenv").config();
 
 const { utils } = require("ethers");
