@@ -14,6 +14,9 @@ const { forkReset, sendEth } = require("./utils");
 
 const connectV2UbiquityArtifacts = require("../../artifacts/contracts/mainnet/connectors/ubiquity/main.sol/ConnectV2Ubiquity.json");
 
+const {abi: implementationsABI} = require("../../scripts/constant/abi/core/InstaImplementations.json")
+const implementationsMappingAddr = "0xCBA828153d3a85b30B5b912e1f2daCac5816aE9D"
+
 describe.only("Ubiquity", function () {
   const ubiquityTest = "UBIQUITY-TEST-A";
 
@@ -52,6 +55,8 @@ describe.only("Ubiquity", function () {
   let instaIndex;
   let instaConnectorsV2;
   let connector;
+  let instaImplementationsMapping;
+  let InstaAccountV2DefaultImpl;
 
   let uadWhale;
 
@@ -79,6 +84,12 @@ describe.only("Ubiquity", function () {
     await sendEth(ethWhale, masterAddress, 100);
 
     instaConnectorsV2 = new ethers.Contract(addresses.core.connectorsV2, abis.core.connectorsV2);
+
+    instaImplementationsMapping = await ethers.getContractAt(implementationsABI, implementationsMappingAddr);
+    InstaAccountV2DefaultImpl = await ethers.getContractFactory("InstaDefaultImplementation")
+    instaAccountV2DefaultImpl = await InstaAccountV2DefaultImpl.deploy(addresses.core.instaIndex);
+    await instaAccountV2DefaultImpl.deployed()
+    await( await instaImplementationsMapping.connect(master).setDefaultImplementation(instaAccountV2DefaultImpl.address)).wait();
 
     connector = await deployAndEnableConnector({
       connectorName: ubiquityTest,
@@ -172,8 +183,8 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
-    });
+        ).to.be.not.reverted; 
+      });
 
     it("should deposit uAD to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUAD(100);
@@ -188,7 +199,7 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+      ).to.be.not.reverted; 
     });
 
     it("should deposit 3CRV to get Ubiquity Bonding Shares", async function () {
@@ -204,7 +215,7 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+      ).to.be.not.reverted; 
     });
 
     it("should deposit DAI to get Ubiquity Bonding Shares", async function () {
@@ -220,7 +231,7 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+      ).to.be.not.reverted; 
     });
 
     it("should deposit USDC to get Ubiquity Bonding Shares", async function () {
@@ -236,7 +247,7 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+      ).to.be.not.reverted; 
     });
 
     it("should deposit USDT to get Ubiquity Bonding Shares", async function () {
@@ -252,7 +263,7 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+      ).to.be.not.reverted; 
     });
   });
 
