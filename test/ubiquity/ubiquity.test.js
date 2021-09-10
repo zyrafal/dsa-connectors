@@ -14,13 +14,13 @@ const { forkReset, sendEth } = require("./utils");
 
 const connectV2UbiquityArtifacts = require("../../artifacts/contracts/mainnet/connectors/ubiquity/main.sol/ConnectV2Ubiquity.json");
 
-const {abi: implementationsABI} = require("../../scripts/constant/abi/core/InstaImplementations.json")
+const { abi: implementationsABI } = require("../../scripts/constant/abi/core/InstaImplementations.json")
 const implementationsMappingAddr = "0xCBA828153d3a85b30B5b912e1f2daCac5816aE9D"
 
 describe.only("Ubiquity", function () {
   const ubiquityTest = "UBIQUITY-TEST-A";
 
-  const BONDING = "0xC251eCD9f1bD5230823F9A0F99a44A87Ddd4CA38";
+  const BOND = "0x2dA07859613C14F6f05c97eFE37B9B4F212b5eF5";
   const UAD = "0x0F644658510c95CB46955e55D7BA9DDa9E9fBEc6";
   const DAI = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
@@ -42,8 +42,9 @@ describe.only("Ubiquity", function () {
     "function remove_liquidity_one_coin(uint256 _burn_amount, int128 i, uint256 _min_received) external returns (uint256)",
     "function add_liquidity(uint256[3],uint256) returns (uint256)",
     "function approve(address, uint256) external",
+    "function holderTokens(address) view returns (uint256[])",
+    "function getBond(uint256) view returns (tuple(address,uint256,uint256,uint256,uint256,uint256))",
   ];
-
   let dsa;
   let POOL3Contract;
   let CRV3Contract;
@@ -52,6 +53,7 @@ describe.only("Ubiquity", function () {
   let DAIContract;
   let USDCContract;
   let USDTContract;
+  let BONDContract;
   let instaIndex;
   let instaConnectorsV2;
   let connector;
@@ -59,6 +61,17 @@ describe.only("Ubiquity", function () {
   let InstaAccountV2DefaultImpl;
 
   let uadWhale;
+
+  const bondingShareLpAmount = async function (address) {
+    let LP = 0;
+    const bondId = await BONDContract.holderTokens(address);
+    if (bondId.length){
+      const bond = await BONDContract.getBond(bondId[0]);
+      LP = bond[5];  
+    }
+    // console.log("LP", ethers.utils.formatEther(LP.toString()));
+    return LP;
+  }
 
   beforeEach(async () => {
     await forkReset(blockFork);
@@ -74,6 +87,7 @@ describe.only("Ubiquity", function () {
     DAIContract = new ethers.Contract(DAI, ABI, uadWhale);
     USDCContract = new ethers.Contract(USDC, ABI, uadWhale);
     USDTContract = new ethers.Contract(USDT, ABI, uadWhale);
+    BONDContract = new ethers.Contract(BOND, ABI, uadWhale);
     dsa = (await buildDSAv2(uadWhaleAddress)).connect(uadWhale);
     await sendEth(ethWhale, dsa.address, 100);
 
@@ -89,7 +103,7 @@ describe.only("Ubiquity", function () {
     InstaAccountV2DefaultImpl = await ethers.getContractFactory("InstaDefaultImplementation")
     instaAccountV2DefaultImpl = await InstaAccountV2DefaultImpl.deploy(addresses.core.instaIndex);
     await instaAccountV2DefaultImpl.deployed()
-    await( await instaImplementationsMapping.connect(master).setDefaultImplementation(instaAccountV2DefaultImpl.address)).wait();
+    await (await instaImplementationsMapping.connect(master).setDefaultImplementation(instaAccountV2DefaultImpl.address)).wait();
 
     connector = await deployAndEnableConnector({
       connectorName: ubiquityTest,
@@ -138,6 +152,7 @@ describe.only("Ubiquity", function () {
       expect(DAIContract.address).to.be.properAddress;
       expect(USDCContract.address).to.be.properAddress;
       expect(USDTContract.address).to.be.properAddress;
+      expect(BONDContract.address).to.be.properAddress;
       expect(instaIndex.address).to.be.properAddress;
       expect(instaConnectorsV2.address).to.be.properAddress;
       expect(connector.address).to.be.properAddress;
@@ -172,6 +187,7 @@ describe.only("Ubiquity", function () {
   describe("Main", function () {
     it("should deposit uAD3CRVf to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUAD3CRVf(100);
+      expect(await bondingShareLpAmount(dsa.address)).to.be.equal(0);
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -183,11 +199,13 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-        ).to.be.not.reverted; 
-      });
+      ).to.be.not.reverted;
+      expect(await bondingShareLpAmount(dsa.address)).to.be.gt(0);
+    });
 
     it("should deposit uAD to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUAD(100);
+      expect(await bondingShareLpAmount(dsa.address)).to.be.equal(0);
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -199,11 +217,13 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.not.reverted; 
+      ).to.be.not.reverted;
+      expect(await bondingShareLpAmount(dsa.address)).to.be.gt(0);
     });
 
     it("should deposit 3CRV to get Ubiquity Bonding Shares", async function () {
       await dsaDepositCRV3(100);
+      expect(await bondingShareLpAmount(dsa.address)).to.be.equal(0);
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -215,11 +235,13 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.not.reverted; 
+      ).to.be.not.reverted;
+      expect(await bondingShareLpAmount(dsa.address)).to.be.gt(0);
     });
 
     it("should deposit DAI to get Ubiquity Bonding Shares", async function () {
       await dsaDepositDAI(100);
+      expect(await bondingShareLpAmount(dsa.address)).to.be.equal(0);
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -231,11 +253,13 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.not.reverted; 
+      ).to.be.not.reverted;
+      expect(await bondingShareLpAmount(dsa.address)).to.be.gt(0);
     });
 
     it("should deposit USDC to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUSDC(100);
+      expect(await bondingShareLpAmount(dsa.address)).to.be.equal(0);
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -247,11 +271,13 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.not.reverted; 
+      ).to.be.not.reverted;
+      expect(await bondingShareLpAmount(dsa.address)).to.be.gt(0);
     });
 
     it("should deposit USDT to get Ubiquity Bonding Shares", async function () {
       await dsaDepositUSDT(100);
+      expect(await bondingShareLpAmount(dsa.address)).to.be.equal(0);
       await expect(
         dsa.cast(
           ...encodeSpells([
@@ -263,7 +289,8 @@ describe.only("Ubiquity", function () {
           ]),
           uadWhaleAddress
         )
-      ).to.be.not.reverted; 
+      ).to.be.not.reverted;
+      expect(await bondingShareLpAmount(dsa.address)).to.be.gt(0);
     });
   });
 
