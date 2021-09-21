@@ -6,6 +6,7 @@
   "scripts": {
     "test": "hardhat test",
     "coverage": "./node_modules/.bin/solidity-coverage",
+    "check": "node status-checks/huskyCheck.js",
     "check-husky": "node status-checks/huskyCheck.js",
     "build-contracts": "sol-merger \"./contracts/connectors/mock.sol\" ./contracts/build"
   },
@@ -33,7 +34,7 @@
   "devDependencies": {
     "@ethersproject/units": "^5.4.0",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
-    "@nomiclabs/hardhat-etherscan": "^2.1.4",
+    "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/test-helpers": "^0.5.12",
@@ -42,8 +43,8 @@
     "chai-as-promised": "^7.1.1",
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.4.4",
-    "hardhat": "^2.6.0",
-    "hardhat-deploy": "^0.8.11",
+    "hardhat": "^2.6.4",
+    "hardhat-deploy": "^0.9.1",
     "hardhat-deploy-ethers": "^0.3.0-beta.10",
     "husky": "^6.0.0",
     "sol-merger": "^2.0.1",
