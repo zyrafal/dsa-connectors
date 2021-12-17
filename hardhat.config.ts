@@ -120,6 +120,7 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 10000 * 1000, // 10,000 seconds
+    bail: true
   },
   // tenderly: {
   //   project: process.env.TENDERLY_PROJECT,

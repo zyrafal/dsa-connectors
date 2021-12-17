@@ -61,4 +61,4 @@ export async function mineNBlock(
   });
   // eslint-disable-next-line no-await-in-loop
   await Promise.all(minings);
-}
+};
