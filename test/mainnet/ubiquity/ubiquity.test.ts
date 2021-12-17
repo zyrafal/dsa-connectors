@@ -4,14 +4,14 @@ const { waffle, ethers } = hre;
 const { provider } = waffle;
 const { BigNumber, utils } = ethers;
 
-import {deployAndEnableConnector} from "../../../scripts/tests/deployAndEnableConnector";
-import {buildDSAv2} from "../../../scripts/tests/buildDSAv2";
-import {encodeSpells} from "../../../scripts/tests/encodeSpells";
-import {addresses} from "../../../scripts/tests/mainnet/addresses";
-import {abis} from "../../../scripts/constant/abis";
-import {impersonateAccounts} from "../../../scripts/tests/impersonate";
+import { deployAndEnableConnector } from "../../../scripts/tests/deployAndEnableConnector";
+import { buildDSAv2 } from "../../../scripts/tests/buildDSAv2";
+import { encodeSpells } from "../../../scripts/tests/encodeSpells";
+import { addresses } from "../../../scripts/tests/mainnet/addresses";
+import { abis } from "../../../scripts/constant/abis";
+import { impersonateAccounts } from "../../../scripts/tests/impersonate";
 import type { Signer, Contract, BigNumberish } from "ethers";
-import {forkReset, sendEth, mineNBlock} from "./utils";
+import { forkReset, sendEth, mineNBlock } from "./utils";
 import { ConnectV2Ubiquity__factory } from "../../../typechain";
 
 import { abi as implementationsABI } from "../../../scripts/constant/abi/core/InstaImplementations.json";
@@ -122,7 +122,6 @@ describe("Ubiquity", function () {
     BONDContract = new ethers.Contract(BOND, ABI, uadWhale);
     dsa = (await buildDSAv2(uadWhaleAddress)).connect(uadWhale);
     await sendEth(ethWhale, dsa.address, 100);
-    await sendEth(ethWhale, uadWhaleAddress, 100);
 
     instaIndex = new ethers.Contract(addresses.core.instaIndex, abis.core.instaIndex, ethWhale);
 
@@ -149,6 +148,9 @@ describe("Ubiquity", function () {
   });
 
   const logAll = async function () {
+    console.log("deployer       eth", utils.formatEther(await ethers.provider.getBalance(uadWhaleAddress)));
+    console.log("deployer       uad", utils.formatEther(await uADContract.balanceOf(uadWhaleAddress)));
+    console.log("deployer uad3CRV-f", utils.formatEther(await uAD3CRVfContract.balanceOf(uadWhaleAddress)));
     console.log("dsa            eth", utils.formatEther(await ethers.provider.getBalance(dsa.address)));
     console.log("dsa            dai", utils.formatEther(await DAIContract.balanceOf(dsa.address)));
     console.log("dsa           usdc", utils.formatUnits(await USDCContract.balanceOf(dsa.address), 6));
@@ -216,7 +218,7 @@ describe("Ubiquity", function () {
             {
               connector: ubiquityTest,
               method: "deposit",
-              args: [UAD3CRVF, one.mul(100), 4, 0, 0]
+              args: [UAD3CRVF, one.mul(100), 1, 0, 0]
             }
           ]),
           uadWhaleAddress
@@ -233,7 +235,7 @@ describe("Ubiquity", function () {
             {
               connector: ubiquityTest,
               method: "deposit",
-              args: [UAD, one.mul(100), 4, 0, 0]
+              args: [UAD, one.mul(100), 1, 0, 0]
             }
           ]),
           uadWhaleAddress
@@ -250,7 +252,7 @@ describe("Ubiquity", function () {
             {
               connector: ubiquityTest,
               method: "deposit",
-              args: [CRV3, one.mul(100), 4, 0, 0]
+              args: [CRV3, one.mul(100), 1, 0, 0]
             }
           ]),
           uadWhaleAddress
@@ -267,7 +269,7 @@ describe("Ubiquity", function () {
             {
               connector: ubiquityTest,
               method: "deposit",
-              args: [DAI, one.mul(100), 4, 0, 0]
+              args: [DAI, one.mul(100), 1, 0, 0]
             }
           ]),
           uadWhaleAddress

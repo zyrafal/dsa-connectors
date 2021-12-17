@@ -30,23 +30,32 @@ export async function sendEth(from: any, to: any, amount: any) {
   });
 }
 
-export async function mineNBlock(blockCount: any, secondsBetweenBlock: any) {
+export async function mineNBlock(
+  blockCount: number,
+  secondsBetweenBlock?: number
+): Promise<void> {
   const blockBefore = await ethers.provider.getBlock("latest");
-  const maxMinedBlockPerBatch = 1000;
+  const maxMinedBlockPerBatch = 5000;
   let blockToMine = blockCount;
   let blockTime = blockBefore.timestamp;
   while (blockToMine > maxMinedBlockPerBatch) {
     // eslint-disable-next-line @typescript-eslint/no-loop-func
-    const minings: any = [maxMinedBlockPerBatch].map((_v, i) => {
-      const newTs = blockTime + i + (secondsBetweenBlock || 1);
-      return mineBlock(newTs);
-    });
+    const minings = [...Array(maxMinedBlockPerBatch).keys()].map(
+      (_v, i) => {
+        const newTs = blockTime + i + (secondsBetweenBlock || 1);
+        return mineBlock(newTs);
+      }
+    );
     // eslint-disable-next-line no-await-in-loop
     await Promise.all(minings);
     blockToMine -= maxMinedBlockPerBatch;
-    blockTime = blockTime + maxMinedBlockPerBatch - 1 + maxMinedBlockPerBatch * (secondsBetweenBlock || 1);
+    blockTime =
+      blockTime +
+      maxMinedBlockPerBatch -
+      1 +
+      maxMinedBlockPerBatch * (secondsBetweenBlock || 1);
   }
-  const minings = [blockToMine].map((_v, i) => {
+  const minings = [...Array(blockToMine).keys()].map((_v, i) => {
     const newTs = blockTime + i + (secondsBetweenBlock || 1);
     return mineBlock(newTs);
   });
